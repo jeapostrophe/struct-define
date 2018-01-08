@@ -45,7 +45,7 @@
                                              #'field-ref #'field-set!))
               ...))]))
 
-(define-syntax-rule (define-struct-define the-struct the-struct-define)
+(define-syntax-rule (define-struct-define the-struct-define the-struct)
   (define-syntax-rule (the-struct-define instance-id)
     (struct-define the-struct instance-id)))
 
