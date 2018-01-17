@@ -15,7 +15,10 @@
             (raise-syntax-error 'set! "field not mutable" stx #'id))]
          [id (identifier? #'id)
              (quasisyntax/loc stx
-               (#,field-ref-stx #,instace-id-stx))])))))
+               (#,field-ref-stx #,instace-id-stx))]
+         [(id . args)
+          (quasisyntax/loc stx
+            ((#,field-ref-stx #,instace-id-stx) . args))])))))
 
 (define-syntax (struct-define stx)
   (syntax-parse stx
