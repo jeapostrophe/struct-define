@@ -25,19 +25,16 @@
     [(_ the-struct the-instance:expr)
      #:declare the-struct
      (static struct-info? "structure type transformer binding")
-     #:do [(define struct+-len
-             (add1 (string-length (symbol->string (syntax->datum #'the-struct)))))
-           (define si (extract-struct-info (attribute the-struct.value)))]
+     #:do [(define struct-info (extract-struct-info (attribute the-struct.value)))
+           (define field-names (struct-field-info-list (syntax-local-value #'the-struct)))
+           (define field-refs (list-ref struct-info 3))
+           (define field-sets (list-ref struct-info 4))]
      #:with ([field-name field-ref field-set!] ...)
-     (for/list ([field-ref (in-list (list-ref si 3))]
-                [field-set (in-list (list-ref si 4))])
-       (define field-ref-s
-         (symbol->string (syntax->datum field-ref)))
-       (define field-name-s
-         (substring field-ref-s struct+-len))
-       (define field-name
-         (datum->syntax #'the-instance (string->symbol field-name-s)))
-       (list field-name field-ref field-set))
+     (for/list ([field-name (in-list field-names)]
+                [field-ref (in-list field-refs)]
+                [field-set (in-list field-sets)])
+       (define field-name-stx (datum->syntax stx field-name))
+       (list field-name-stx field-ref field-set))
      #:with (field-val-id ...)
      (generate-temporaries #'(field-name ...))
 
