@@ -1,8 +1,7 @@
 #lang racket/base
 (require (for-syntax racket/base
-                     racket/function
-                     racket/match
                      racket/struct-info
+                     racket/syntax
                      syntax/parse))
 
 (begin-for-syntax
@@ -23,22 +22,10 @@
           (quasisyntax/loc stx
             ((#,field-ref-stx #,instance-id-stx) . args))])))))
 
-(define-for-syntax (stx-transform-name stx transformer)
-  (datum->syntax stx
-                 (string->symbol
-                  (transformer
-                   (symbol->string
-                    (syntax->datum stx))))))
-
-(define-for-syntax (stx-add-prefix prefix separator stx)
-  (match stx
-    [#false #false]
-    [stx (stx-transform-name stx (curry string-append prefix separator))]))
-
 (define-syntax (struct-define stx)
   (syntax-parse stx
     [(_ the-struct
-        the-instance:expr
+        the-instance:id
         (~optional (~seq (~and #:prefix prefix-kw)))
         (~optional (~seq #:separator separator-kw)))
      #:declare the-struct
@@ -56,8 +43,8 @@
      (for/list ([field-name (in-list field-names)]
                 [field-ref (in-list field-refs)]
                 [field-set (in-list field-sets)])
-       (define field-name-stx (datum->syntax stx field-name))
-       (define prefixed-name-stx (stx-add-prefix instance-name separator field-name-stx))
+       (define field-name-stx (datum->syntax #'the-instance field-name))
+       (define prefixed-name-stx (format-id #'the-instance "~a~a~a" instance-name separator field-name))
        (list (if prefix? prefixed-name-stx field-name-stx)
              field-ref
              field-set))
@@ -72,29 +59,20 @@
                                              #'field-ref #'field-set!))
               ...))]))
 
-(define-syntax-rule (define-struct-define the-struct-define the-struct)
-  (define-syntax-rule (the-struct-define instance-id)
-    (struct-define the-struct instance-id)))
+(define-syntax (define-struct-define stx)
+  (syntax-parse stx
+    [(_ the-struct-define:id the-struct:id)
+     #'(define-syntax-rule (the-struct-define instance-id)
+         (struct-define the-struct instance-id))]
+
+    [(_ the-struct-define:id the-struct:id #:prefix)
+     #'(define-syntax-rule (the-struct-define instance-id)
+         (struct-define the-struct instance-id #:prefix))]
+
+    [(_ the-struct-define:id the-struct:id #:prefix #:separator separator-kw)
+     #'(define-syntax-rule (the-struct-define instance-id)
+         (struct-define the-struct instance-id #:prefix #:separator separator-kw))]))
 
 (provide struct-define
          define-struct-define)
 
-(module+ test
-  (require rackunit)
-  (struct point (x [y #:mutable]) #:transparent)
-  (define p (point 2 3))
-  (check-equal? (let ()
-                  (struct-define point p)
-                  (set! y 6)
-                  (+ x y))
-                8)
-  (check-equal? (let ()
-                  (struct-define point p #:prefix)
-                  (set! p.y 7)
-                  (+ p.x p.y))
-                9)
-  (check-equal? (let ()
-                  (struct-define point p #:prefix #:separator ":")
-                  (set! p:y 2)
-                  (+ p:x p:y))
-                4))
