@@ -12,7 +12,7 @@
 @defmodule[struct-define]
 
 @racketmodname[struct-define] provides a short-hand way of accessing
-the fields of structu by the name used in the definition of the
+the fields of structs by the name used in the definition of the
 structure.
 
 @defform[(struct-define some-struct some-instance)]{If
@@ -21,9 +21,9 @@ structure.
 that expand to @racket[(some-struct-f0 some-instance)]. If a field
 @racket[f0] is mutable, then @racket[(set! f0 x)] expands to
 @racket[(set-some-struct-f0! some-instance x)]. (Note: This
-explanation implies that @racket[struct-define] makes assumption about
+explanation implies that @racket[struct-define] makes an assumption about
 the name of the accessors, but it actually uses whatever the real
-identifiers embedded in the static struct record.)}
+identifiers embedded in the static struct record are.)}
 
 @defform[(define-struct-define the-struct-define the-struct)]{Defines
 @racket[the-struct-define] such that @racket[(the-struct-define

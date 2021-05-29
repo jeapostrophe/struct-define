@@ -8,8 +8,7 @@
   (define (make-field-name-transformer instance-id-stx field-ref-stx field-set!-stx)
     (make-set!-transformer
      (lambda (stx)
-       (syntax-parse stx
-         #:track-literals
+       (syntax-case stx (set!)
          [(set! id v)
           (if (syntax->datum field-set!-stx)
               (quasisyntax/loc stx
