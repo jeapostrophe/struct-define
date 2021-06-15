@@ -24,54 +24,58 @@
 (define-syntax (struct-define stx)
   (syntax-parse stx
     [(_ the-struct
-        the-instance:id
-        (~optional (~seq (~and #:prefix prefix-kw)))
-        (~optional (~seq #:separator separator-kw)))
+        the-instance:expr
+        (~optional (~seq #:prefix prefix-id:id))
+        (~optional (~seq #:separator separator-expr:expr)))
+
      #:declare the-struct
      (static struct-info? "structure type transformer binding")
 
      #:do [(define struct-info (extract-struct-info (attribute the-struct.value)))
-           (define instance-name (symbol->string (syntax->datum #'the-instance)))
            (define field-names (struct-field-info-list (syntax-local-value #'the-struct)))
            (define field-refs (list-ref struct-info 3))
            (define field-sets (list-ref struct-info 4))
-           (define prefix? (if (attribute prefix-kw) #true #false))
-           (define separator (if (attribute separator-kw) (syntax->datum #'separator-kw) "."))]
+           (define prefix? (if (attribute prefix-id) #true #false))
+           (define prefix-name (and prefix? (syntax->datum #'prefix-id)))
+           (define separator (if (attribute separator-expr) (syntax->datum #'separator-expr) "."))]
 
      #:with ([field-name field-ref field-set!] ...)
      (for/list ([field-name (in-list field-names)]
                 [field-ref (in-list field-refs)]
                 [field-set (in-list field-sets)])
-       (define field-name-stx (datum->syntax #'the-instance field-name))
-       (define prefixed-name-stx (format-id #'the-instance "~a~a~a" instance-name separator field-name))
-       (list (if prefix? prefixed-name-stx field-name-stx)
+       (list (if prefix?
+                 (format-id #'the-instance "~a~a~a" prefix-name separator field-name)
+                 (datum->syntax #'the-instance field-name))
              field-ref
              field-set))
 
-     #:with (field-val-id ...)
-     (generate-temporaries #'(field-name ...))
-
      (syntax/loc stx
-       (begin (define the-instance-id the-instance)
+       (begin (define inst the-instance)
               (define-syntax field-name
-                (make-field-name-transformer #'the-instance-id
-                                             #'field-ref #'field-set!))
+                (make-field-name-transformer #'inst #'field-ref #'field-set!))
               ...))]))
 
 (define-syntax (define-struct-define stx)
   (syntax-parse stx
     [(_ the-struct-define:id the-struct:id)
-     #'(define-syntax-rule (the-struct-define instance-id)
-         (struct-define the-struct instance-id))]
+     #'(define-syntax-rule (the-struct-define the-instance)
+         (struct-define the-struct the-instance))]
 
     [(_ the-struct-define:id the-struct:id #:prefix)
-     #'(define-syntax-rule (the-struct-define instance-id)
-         (struct-define the-struct instance-id #:prefix))]
+     #'(define-syntax (the-struct-define stx)
+         (syntax-parse stx
+           [(_ the-instance:id)
+            #'(the-struct-define the-instance the-instance)]
+           [(_ the-instance:expr the-prefix-id:id)
+            #'(struct-define the-struct the-instance #:prefix the-prefix-id)]))]
 
-    [(_ the-struct-define:id the-struct:id #:prefix #:separator separator-kw)
-     #'(define-syntax-rule (the-struct-define instance-id)
-         (struct-define the-struct instance-id #:prefix #:separator separator-kw))]))
+    [(_ the-struct-define:id the-struct:id #:prefix #:separator separator-expr:expr)
+     #'(define-syntax (the-struct-define stx)
+         (syntax-parse stx
+           [(_ the-instance:id)
+            #'(the-struct-define the-instance the-instance)]
+           [(_ the-instance:expr the-prefix-id:id)
+            #'(struct-define the-struct the-instance #:prefix the-prefix-id #:separator separator-expr)]))]))
 
 (provide struct-define
          define-struct-define)
-
