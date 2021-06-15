@@ -65,16 +65,16 @@
      #'(define-syntax (the-struct-define stx)
          (syntax-parse stx
            [(_ the-instance:id)
-            #'(the-struct-define the-instance the-instance)]
-           [(_ the-instance:expr the-prefix-id:id)
+            #'(the-struct-define the-instance #:prefix the-instance)]
+           [(_ the-instance:expr #:prefix the-prefix-id:id)
             #'(struct-define the-struct the-instance #:prefix the-prefix-id)]))]
 
     [(_ the-struct-define:id the-struct:id #:prefix #:separator separator-expr:expr)
      #'(define-syntax (the-struct-define stx)
          (syntax-parse stx
            [(_ the-instance:id)
-            #'(the-struct-define the-instance the-instance)]
-           [(_ the-instance:expr the-prefix-id:id)
+            #'(the-struct-define the-instance #:prefix the-instance)]
+           [(_ the-instance:expr #:prefix the-prefix-id:id)
             #'(struct-define the-struct the-instance #:prefix the-prefix-id #:separator separator-expr)]))]))
 
 (provide struct-define
