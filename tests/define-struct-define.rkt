@@ -32,7 +32,12 @@
     (point-define (point a b))
     (+ x y))
 
+  (define (add-xy-expr-prefix a b)
+    (point-define-dot (point a b) #:prefix p)
+    (+ p.x p.y))
+
   (check-equal? (add-xy-expr 1 2) 3)
+  (check-equal? (add-xy-expr-prefix 1 2) 3)
 
   ;;
   ;; This might be a more practical use of #:prefix
