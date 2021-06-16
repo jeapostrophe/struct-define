@@ -32,9 +32,24 @@
      (static struct-info? "structure type transformer binding")
 
      #:do [(define struct-info (extract-struct-info (attribute the-struct.value)))
-           (define field-names (struct-field-info-list (syntax-local-value #'the-struct)))
            (define field-refs (list-ref struct-info 3))
            (define field-sets (list-ref struct-info 4))
+           (define field-names
+             (let ([s (syntax-local-value #'the-struct)])
+               (cond
+                 [(struct-field-info? s)
+                  (struct-field-info-list s)]
+                 [else
+                  ;; Use the constructor id to determine the prefix
+                  ;; length in case the struct is requried via
+                  ;; `(rename-in ...)`.
+                  (define constructor-stx (list-ref struct-info 1))
+                  (define prefix-len (add1 (string-length (symbol->string (syntax->datum constructor-stx)))))
+                  (for/list ([ref-stx (in-list field-refs)])
+                    (define ref-id (syntax->datum ref-stx))
+                    (define ref-str (symbol->string ref-id))
+                    (define id (string->symbol (substring ref-str prefix-len)))
+                    (datum->syntax #'the-instance id #'the-instance))])))
            (define prefix? (if (attribute prefix-id) #true #false))
            (define prefix-name (and prefix? (syntax->datum #'prefix-id)))
            (define separator (if (attribute separator-expr) (syntax->datum #'separator-expr) "."))]
