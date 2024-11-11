@@ -2,7 +2,7 @@
 (require (for-syntax racket/base
                      racket/struct-info
                      racket/syntax
-                     syntax/parse))
+                     syntax/parse/pre))
 
 (begin-for-syntax
   (define (make-field-name-transformer instance-id-stx field-ref-stx field-set!-stx)
